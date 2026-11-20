@@ -1,0 +1,49 @@
+
+services:
+
+  frontend:
+    build: ./frontend
+    container_name: placement-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - placement-network
+
+  backend:
+    build: ./backend
+    container_name: placement-backend
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgres://admin:password123@database:5432/placementdb
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - placement-network
+
+  database:
+    image: postgres:16
+    container_name: placement-database
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: placementdb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d placementdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - placement-network
+
+volumes:
+  postgres-data:
+
+networks:
+  placement-network:
+    driver: bridge
